@@ -40,7 +40,7 @@ class MIDIConversionError(Exception):
   pass
 
 
-def midi_to_note_sequence(midi_data):
+def midi_to_note_sequence(midi_data, name_instrument_map=dict()):
   """Convert MIDI file contents to a NoteSequence.
 
   Converts a MIDI file encoded as a string into a NoteSequence. Decoding errors
@@ -117,7 +117,15 @@ def midi_to_note_sequence(midi_data):
   midi_notes = []
   midi_pitch_bends = []
   midi_control_changes = []
-  for num_instrument, midi_instrument in enumerate(midi.instruments):
+
+  for i, midi_instrument in enumerate(midi.instruments):            
+    num_instrument = i
+    if len(name_instrument_map) > 0:
+      if midi_instrument.name in name_instrument_map:
+        num_instrument = name_instrument_map[midi_instrument.name]
+      else:
+        continue      
+
     # Populate instrument name from the midi's instruments
     if midi_instrument.name:
       instrument_info = sequence.instrument_infos.add()
@@ -170,7 +178,7 @@ def midi_to_note_sequence(midi_data):
   return sequence
 
 
-def midi_file_to_note_sequence(midi_file):
+def midi_file_to_note_sequence(midi_file, name_instrument_map=dict()):
   """Converts MIDI file to a NoteSequence.
 
   Args:
@@ -184,7 +192,7 @@ def midi_file_to_note_sequence(midi_file):
   """
   with open(midi_file, 'rb') as f:
     midi_as_string = f.read()
-    return midi_to_note_sequence(midi_as_string)
+    return midi_to_note_sequence(midi_as_string, name_instrument_map=name_instrument_map)
 
 
 def note_sequence_to_midi_file(sequence, output_file,

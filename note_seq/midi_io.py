@@ -118,13 +118,13 @@ def midi_to_note_sequence(midi_data, name_instrument_map=dict()):
   midi_pitch_bends = []
   midi_control_changes = []
 
-  for i, midi_instrument in enumerate(midi.instruments):            
+  for i, midi_instrument in enumerate(midi.instruments):        
     num_instrument = i
     if len(name_instrument_map) > 0:
       if midi_instrument.name in name_instrument_map:
         num_instrument = name_instrument_map[midi_instrument.name]
       else:
-        continue      
+        continue
 
     # Populate instrument name from the midi's instruments
     if midi_instrument.name:

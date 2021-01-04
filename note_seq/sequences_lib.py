@@ -851,7 +851,7 @@ def split_note_sequence_on_time_changes(note_sequence,
     return []
 
 
-def split_note_sequence_on_silence(note_sequence, gap_seconds=3.0):
+def split_note_sequence_on_silence(note_sequence, instr=None, gap_seconds=3.0):
   """Split one NoteSequence into many around gaps of silence.
 
   This function splits a NoteSequence into multiple NoteSequences, each of which
@@ -872,10 +872,13 @@ def split_note_sequence_on_silence(note_sequence, gap_seconds=3.0):
   split_times = [0.0]
   last_active_time = 0.0
 
+  split_on_instr = lambda x: x==instr if instr != None else True
+
   for note in notes_by_start_time:
-    if note.start_time > last_active_time + gap_seconds:
+    if note.start_time > last_active_time + gap_seconds and split_on_instr(note.instrument):
       split_times.append(note.start_time)
-    last_active_time = max(last_active_time, note.end_time)
+    if split_on_instr(note.instrument):
+      last_active_time = max(last_active_time, note.end_time)
 
   if note_sequence.total_time > split_times[-1]:
     split_times.append(note_sequence.total_time)

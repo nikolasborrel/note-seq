@@ -851,7 +851,7 @@ def split_note_sequence_on_time_changes(note_sequence,
     return []
 
 
-def split_note_sequence_on_silence(note_sequence, instr=None, gap_seconds=3.0):
+def split_note_sequence_on_silence(note_sequence, instr=None, remove_silence=False, gap_seconds=3.0):
   """Split one NoteSequence into many around gaps of silence.
 
   This function splits a NoteSequence into multiple NoteSequences, each of which
@@ -869,22 +869,38 @@ def split_note_sequence_on_silence(note_sequence, instr=None, gap_seconds=3.0):
   notes_by_start_time = sorted(
       list(note_sequence.notes), key=lambda note: note.start_time)
 
-  split_times = [0.0]
-  last_active_time = 0.0
+  if instr != None:
+    notes_by_start_time = list(filter(lambda x: x.instrument==instr, notes_by_start_time))
 
-  split_on_instr = lambda x: x==instr if instr != None else True
+  split_times_start = [0.0]
+  split_times_end   = []
+  last_active_time  = 0.0
 
   for note in notes_by_start_time:
-    if note.start_time > last_active_time + gap_seconds and split_on_instr(note.instrument):
-      split_times.append(note.start_time)
-    if split_on_instr(note.instrument):
-      last_active_time = max(last_active_time, note.end_time)
+    if note.start_time > last_active_time + gap_seconds:
+      split_times_start.append(note.start_time)
+      split_times_end.append(last_active_time)
+    last_active_time = max(last_active_time, note.end_time)
 
-  if note_sequence.total_time > split_times[-1]:
-    split_times.append(note_sequence.total_time)
+  if remove_silence:
+    if len(split_times_end) > 0:
+      if note_sequence.total_time > split_times_end[-1]:
+        split_times_end.append(last_active_time)
+    else:
+      split_times_end.append(note_sequence.total_time)
+  elif note_sequence.total_time > split_times_start[-1]:
+    split_times_start.append(note_sequence.total_time)
 
-  if len(split_times) > 1:
-    return _extract_subsequences(note_sequence, split_times)
+  if len(split_times_start) > 1:
+    if remove_silence:
+      extracted_seqs = []
+      split_times_begin_end = list(zip(split_times_start, split_times_end))      
+      for split_at in split_times_begin_end:
+        sub_seq = _extract_subsequences(note_sequence, split_at)
+        extracted_seqs.extend(sub_seq)
+      return extracted_seqs
+    else:
+      return _extract_subsequences(note_sequence, split_times_start)
   else:
     return []
 
